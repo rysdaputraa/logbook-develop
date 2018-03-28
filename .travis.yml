@@ -1,0 +1,52 @@
+language: python
+services:
+- redis-server
+python:
+- '2.7'
+- '3.5'
+- '3.6'
+- pypy
+before_install:
+  - pip install coveralls
+install:
+- sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
+- sudo apt-add-repository -y ppa:chris-lea/zeromq
+- sudo apt-get update
+- sudo apt-get install -y libzmq3-dev
+- pip install -U pip
+- pip install cython
+- cython logbook/_speedups.pyx
+env:
+- DISABLE_LOGBOOK_CEXT=True
+- CYBUILD=True
+script:
+- pip install -e .[all]
+- py.test --cov=logbook -r s tests
+matrix:
+  exclude:
+  - python: pypy
+    env: CYBUILD=True
+  - python: pypy3
+    env: CYBUILD=True
+after_success:
+  - coveralls
+notifications:
+  email:
+    recipients:
+    - vmalloc@gmail.com
+  irc:
+    channels:
+    - chat.freenode.net#pocoo
+    on_success: change
+    on_failure: always
+    use_notice: true
+    skip_join: true
+deploy:
+  - provider: pypi
+    user: vmalloc
+    password:
+      secure: WFmuAbtBDIkeZArIFQRCwyO1TdvF2PaZpo75r3mFgnY+aWm75cdgjZKoNqVprF/f+v9EsX2kDdQ7ZfuhMLgP8MNziB+ty7579ZDGwh64jGoi+DIoeblAFu5xNAqjvhie540uCE8KySk9s+Pq5EpOA5w18V4zxTw+h6tnBQ0M9cQ=
+    on:
+      tags: true
+      repo: getlogbook/logbook
+    distributions: "sdist"
